@@ -26,7 +26,6 @@ Los datos que se toman para este trabajo práctico Nº 1 corresponden a una encu
 base_cruda <- read_csv("datos/encuesta_uso_tiempo_2016.csv", 
     locale = locale(encoding = "ASCII", asciify = TRUE))
 # El campo dia_laborable contenía valores con acentos y no encontré la forma de trabajarlos, así que probando encontré una forma de colapsarlos a un caracter que pudiese trabajar
-
 ```
 La base de datos contiene 27 variables y 2336 observaciones. Contiene variables sociodemográficas a saber: sexo, edad, rango etario, nivel educativo, parentesco con el jefe del hogar, tipo de hogar, quintil_ingreso y estado ocupacional. También se relevaron otras variables contextuales, a saber: dia laborable (para determinar si el uso del tiempo del día relevado fue laborable o no), Día típico. Finalmente, las variables sobre uso del tiempo que son ocho: trabajo_pago, trabajo_domestico_no_pago, voluntariados, estudio_educacion, recreacion, aplicaciones, tareas_cuidados y cuidado_personal.  Se observa que estas últimas se encuentran duplicadas. 
 
@@ -34,7 +33,7 @@ La base de datos contiene 27 variables y 2336 observaciones. Contiene variables 
 #Acá agrego dos variables más para comparar dos grupos de variables que parecen estar duplicadas.
 base_con_promedios <- base_cruda %>% 
   mutate(suma_primer_bloque = trabajo_pago + trabajo_domestico_no_pago + voluntariados + estudio_educacion + recreacion + aplicaciones + tareas_cuidados + cuidado_personal) %>% 
-  mutate(suma_segundo_bloque = trabajo_pago2 + trabajo_domestico_no_pago2 + voluntariados2 + estudio_educacion2 + recreacion2 + aplicaciones2 + tareas_cuidados2 + cuidado_personal2)
+  mutate(suma_segundo_bloque = trabajo_pago2 + trabajo_domestico_no_pago2 + voluntariados2 + estudio_educacion2 + recreacion2 + aplicaciones2 + tareas_cuidados2 + cuidado_personal2) 
 ```
 
 La variable quintil ingreso tiene un solo valor: "5to quintil". Esto debe ser producto de un error e impedirá establecer relaciones entre el nivel de ingreso y otras variables.
@@ -104,8 +103,13 @@ En este histograma se ve mejor cómo los valores se distribuyen de forma mucho m
 
 ## Hipótesis
 
-### Producto de las asimetrías de género, las mujeres dedican más tiempo al trabajo no remunerado y a las tareas de cuidado que los hombres.
+### Hipótesis 1: Producto de las asimetrías de género, las mujeres dedican más tiempo al trabajo no remunerado y a las tareas de cuidado que los hombres.
 
+### Hipótesis 2: Las personas menores de 18 años dedican más tiempo a las actividades recreativas que el resto de las personas mayores de 18 años empleadas en un día laborable.
+
+### Hipótesis 3: Producto de las asimetrías de género, las mujeres activas dedican menos tiempo al trabajo remunerado que los hombres activos.
+
+Primera aproximación a la Hipótesis 3:
 ```{r}
 #Promedio de hs. de trabajo pago en hombres
 base_cruda %>% 
