@@ -1,6 +1,6 @@
 ---
-title: "titulo"
-author: "nombres"
+title: "TP Nº 1"
+author: "Gabriel Diner"
 output: html_document
 ---
 
@@ -8,29 +8,117 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 # Cargar los paquetes necesarios acá
+library(dplyr)
+library(readr)
+library(ggplot2)
 ```
 
 
 ## Introducción
 
-
+Los datos que se toman para este trabajo práctico Nº 1 corresponden a una encuesta sobre el uso del tiempo realizada por el Gobierno de la Ciudad de Buenos Aires realizada en la Ciudad en los meses de septiembre a diciembre del año 2016.
 
 ## Exploración de los datos
 
 
 ```{r}
 # Código para cargar o leer los datos
+base_cruda <- read_csv("datos/encuesta_uso_tiempo_2016.csv", 
+    locale = locale(encoding = "ASCII", asciify = TRUE))
+# El campo dia_laborable contenía valores con acentos y no encontré la forma de trabajarlos, así que probando encontré una forma de colapsarlos a un caracter que pudiese trabajar
+
+```
+La base de datos contiene 27 variables y 2336 observaciones. Contiene variables sociodemográficas a saber: sexo, edad, rango etario, nivel educativo, parentesco con el jefe del hogar, tipo de hogar, quintil_ingreso y estado ocupacional. También se relevaron otras variables contextuales, a saber: dia laborable (para determinar si el uso del tiempo del día relevado fue laborable o no), Día típico. Finalmente, las variables sobre uso del tiempo que son ocho: trabajo_pago, trabajo_domestico_no_pago, voluntariados, estudio_educacion, recreacion, aplicaciones, tareas_cuidados y cuidado_personal.  Se observa que estas últimas se encuentran duplicadas. 
+
+```{r}
+#Acá agrego dos variables más para comparar dos grupos de variables que parecen estar duplicadas.
+base_con_promedios <- base_cruda %>% 
+  mutate(suma_primer_bloque = trabajo_pago + trabajo_domestico_no_pago + voluntariados + estudio_educacion + recreacion + aplicaciones + tareas_cuidados + cuidado_personal) %>% 
+  mutate(suma_segundo_bloque = trabajo_pago2 + trabajo_domestico_no_pago2 + voluntariados2 + estudio_educacion2 + recreacion2 + aplicaciones2 + tareas_cuidados2 + cuidado_personal2)
 ```
 
+La variable quintil ingreso tiene un solo valor: "5to quintil". Esto debe ser producto de un error e impedirá establecer relaciones entre el nivel de ingreso y otras variables.
+```{r}
+filter(base_cruda, quintil_ingreso == "5to quintil")
+```
+
+### Exploración sobre duplicación de variables sobre el uso del tiempo
+Veamos ahora por qué las variables sobre el uso del tiempo se encuentran duplicadas. Para cada variable sobre uso del tiempo (Ej.: trabajo_pago) existe otra duplicada (Ej.:trabajo_pago2) 
+Primero, sumaremos las ocho primeras variables sobre uso del tiempo para luego determinar su promedio:
+
+```{r}
+base_cruda %>% 
+  mutate(suma_primer_bloque = trabajo_pago + trabajo_domestico_no_pago + voluntariados + estudio_educacion + recreacion + aplicaciones + tareas_cuidados + cuidado_personal) %>% 
+  summarise(mean(suma_primer_bloque))
+
+```
+La suma del primer bloque da significativamente mas de 24 hs. Esto se deba probablemente a que es posible hacer más de una actividad simultáneamente (como mirar televisión mientras se plancha la ropa).
+
+Ahora calcularemos su varianza:
+```{r}
+base_cruda %>% 
+  mutate(suma_primer_bloque = trabajo_pago + trabajo_domestico_no_pago + voluntariados + estudio_educacion + recreacion + aplicaciones + tareas_cuidados + cuidado_personal) %>% 
+  summarise(var(suma_primer_bloque))
+```
+
+La varianza es de más de 10, por lo que la distancia respecto de la media es alta.
+
+Veamoslo con un gráfico:
 
 
 ```{r}
-# Cödigo de R acá 
-# Agregá más bloques según sea necesario
+ggplot(base_con_promedios, aes(suma_primer_bloque)) +
+  geom_histogram(bins = 10, aes(colour=as.factor(sexo)))
+
 ```
 
+En este histograma se ve mejor cómo los valores se distribuyen de forma heterogénea.
 
+En segundo lugar haremos el mismo análisis para el segundo conjunto de variables duplicado
+
+```{r}
+base_cruda %>% 
+  mutate(suma_segundo_bloque = trabajo_pago2 + trabajo_domestico_no_pago2 + voluntariados2 + estudio_educacion2 + recreacion2 + aplicaciones2 + tareas_cuidados2 + cuidado_personal2) %>% 
+  summarise(mean(suma_segundo_bloque))
+```
+El promedio de la suma del segundo bloque da 24 hs, es posible que se hayan ponderado los valores de este conjunto de variables para que se distribuyan en un día de 24 hs.
+
+Veamos qué ocurre con la varianza:
+
+```{r}
+base_cruda %>% 
+  mutate(suma_segundo_bloque = trabajo_pago2 + trabajo_domestico_no_pago2 + voluntariados2 + estudio_educacion2 + recreacion2 + aplicaciones2 + tareas_cuidados2 + cuidado_personal2) %>% 
+  summarise(var(suma_segundo_bloque))
+```
+La varianza es de casi 0, por lo que la distancia respecto de la media es insignificante.
+
+También gráficamente:
+
+```{r}
+ggplot(base_con_promedios, aes(suma_segundo_bloque)) +
+  geom_histogram(bins = 10, aes(colour=as.factor(sexo)))
+
+```
+
+En este histograma se ve mejor cómo los valores se distribuyen de forma mucho más homogénea alrededor del valor de un día de 24hs.
 
 ## Hipótesis
 
+### Producto de las asimetrías de género, las mujeres dedican más tiempo al trabajo no remunerado y a las tareas de cuidado que los hombres.
 
+```{r}
+#Promedio de hs. de trabajo pago en hombres
+base_cruda %>% 
+  filter(sexo == "Varon") %>% 
+  filter(dia_laborable == "Dma laborable") %>% 
+  summarise(mean(trabajo_pago))
+```
+
+
+```{r}
+#Promedio de hs. de trabajo pago en mujeres
+base_cruda %>% 
+  filter(sexo == "Mujer") %>% 
+  filter(dia_laborable == "Dma laborable") %>% 
+  summarise(mean(trabajo_pago))
+```
