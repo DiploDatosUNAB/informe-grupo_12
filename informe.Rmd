@@ -46,7 +46,7 @@ Primero, sumaremos las ocho primeras variables sobre uso del tiempo para luego d
 
 ```{r}
 base_con_promedios %>% 
-    summarise(mean(suma_primer_bloque))
+    summarise(promedio = mean(suma_primer_bloque))
 
 ```
 La suma del primer bloque da significativamente mas de 24 hs. Esto se deba probablemente a que es posible hacer más de una actividad simultáneamente (como mirar televisión mientras se plancha la ropa).
@@ -54,7 +54,7 @@ La suma del primer bloque da significativamente mas de 24 hs. Esto se deba proba
 Ahora calcularemos su varianza:
 ```{r}
 base_con_promedios %>% 
-    summarise(var(suma_primer_bloque))
+    summarise(varianza = var(suma_primer_bloque))
 ```
 
 La varianza es de más de 10, por lo que la distancia respecto de la media es alta.
@@ -74,7 +74,7 @@ En segundo lugar haremos el mismo análisis para el segundo conjunto de variable
 
 ```{r}
 base_con_promedios %>% 
-    summarise(mean(suma_segundo_bloque))
+    summarise(promedio = mean(suma_segundo_bloque))
 ```
 El promedio de la suma del segundo bloque da 24 hs, es posible que se hayan ponderado los valores de este conjunto de variables para que se distribuyan en un día de 24 hs.
 
@@ -82,7 +82,7 @@ Veamos qué ocurre con la varianza:
 
 ```{r}
 base_con_promedios %>% 
-    summarise(var(suma_segundo_bloque))
+    summarise(varianza = var(suma_segundo_bloque))
 ```
 La varianza es de casi 0, por lo que la distancia respecto de la media es insignificante.
 
@@ -100,28 +100,44 @@ En este histograma se ve mejor cómo los valores se distribuyen de forma mucho m
 
 ### Hipótesis 1: Producto de las asimetrías de género, las mujeres dedican más tiempo al trabajo no remunerado y a las tareas de cuidado que los hombres.
 
+```{r}
+#Tiempo dedicado por hombres y mujeres al trabajo no remunerado y tareas de cuidado.
+base_cruda %>% 
+  group_by(sexo) %>%  
+  filter(dia_laborable == "Día laborable") %>% 
+  mutate(cuidados_trabajos_no_remunerados = tareas_cuidados + trabajo_domestico_no_pago) %>% 
+  summarise("tiempo_de_cuidado+trabajo_no_remunerado" = mean(cuidados_trabajos_no_remunerados))
+```
+En efecto, las mujeres dedican en promedio 2.5 hs más que los hombres al trabajo no remunerado y a las tareas de cuidado. Esto verificaría la existencia de asimetrías de género.
+
+
 ### Hipótesis 2: Las personas menores de 18 años dedican más tiempo a las actividades recreativas que el resto de las personas mayores de 18 años empleadas en un día laborable.
 
 ```{r}
+#Tiempo dedicado a actividades recreativas de menores de 18 años
 base_cruda %>% 
   filter(edad < "19") %>% 
-  summarise(mean(recreacion))
+  summarise(tiempo_de_recreación_sub_18 = mean(recreacion))
 ```
+
 ```{r}
+#Tiempo dedicado a actividades recreativas de mayores de 18 años empleadas en un día laborable
 base_cruda %>% 
   filter(edad > "18", dia_laborable == "Día laborable", estado_ocupacional == "Ocupado") %>%
-  summarise(mean(recreacion))
+  summarise("tiempo_de_recreacion_+_18" = mean(recreacion))
 ```
+Como era de esperar, las personas menores de 18 años dedican en los días laborables más tiempo (el doble aproximadamente) a las actividades recreativas que las personas empleadas mayores de 18 años. Esto se debería a que al no necesitar trabajar, las personas menores de 18 años cuentan con más tiempo libre disponible para dedicar a actividades recreativas.
 
 
 
 ### Hipótesis 3: Producto de las asimetrías de género, las mujeres activas dedican menos tiempo al trabajo remunerado que los hombres activos.
 
-Primera aproximación a la Hipótesis 3:
 ```{r}
 #Promedio de hs. de trabajo pago en hombres
 base_cruda %>% 
   group_by(sexo) %>%  
   filter(dia_laborable == "Día laborable") %>% 
-  summarise(mean(trabajo_pago))
+  filter(estado_ocupacional == "Ocupado") %>%
+  summarise(promedio_hs_trabajo_pago = mean(trabajo_pago))
 ```
+Aquí también se verifica la hipótesis. Las mujeres le dedican poco más de 1 hora menos por día al trabajo pago que los hombres.

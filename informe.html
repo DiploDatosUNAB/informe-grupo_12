@@ -423,21 +423,21 @@ trabajo_pago) existe otra duplicada (Ej.:trabajo_pago2) Primero,
 sumaremos las ocho primeras variables sobre uso del tiempo para luego
 determinar su promedio:</p>
 <pre class="r"><code>base_con_promedios %&gt;% 
-    summarise(mean(suma_primer_bloque))</code></pre>
+    summarise(promedio = mean(suma_primer_bloque))</code></pre>
 <pre><code>## # A tibble: 1 × 1
-##   `mean(suma_primer_bloque)`
-##                        &lt;dbl&gt;
-## 1                       26.5</code></pre>
+##   promedio
+##      &lt;dbl&gt;
+## 1     26.5</code></pre>
 <p>La suma del primer bloque da significativamente mas de 24 hs. Esto se
 deba probablemente a que es posible hacer más de una actividad
 simultáneamente (como mirar televisión mientras se plancha la ropa).</p>
 <p>Ahora calcularemos su varianza:</p>
 <pre class="r"><code>base_con_promedios %&gt;% 
-    summarise(var(suma_primer_bloque))</code></pre>
+    summarise(varianza = var(suma_primer_bloque))</code></pre>
 <pre><code>## # A tibble: 1 × 1
-##   `var(suma_primer_bloque)`
-##                       &lt;dbl&gt;
-## 1                      10.4</code></pre>
+##   varianza
+##      &lt;dbl&gt;
+## 1     10.4</code></pre>
 <p>La varianza es de más de 10, por lo que la distancia respecto de la
 media es alta.</p>
 <p>Veamoslo con un gráfico:</p>
@@ -449,21 +449,21 @@ forma heterogénea.</p>
 <p>En segundo lugar haremos el mismo análisis para el segundo conjunto
 de variables duplicado</p>
 <pre class="r"><code>base_con_promedios %&gt;% 
-    summarise(mean(suma_segundo_bloque))</code></pre>
+    summarise(promedio = mean(suma_segundo_bloque))</code></pre>
 <pre><code>## # A tibble: 1 × 1
-##   `mean(suma_segundo_bloque)`
-##                         &lt;dbl&gt;
-## 1                        24.0</code></pre>
+##   promedio
+##      &lt;dbl&gt;
+## 1     24.0</code></pre>
 <p>El promedio de la suma del segundo bloque da 24 hs, es posible que se
 hayan ponderado los valores de este conjunto de variables para que se
 distribuyan en un día de 24 hs.</p>
 <p>Veamos qué ocurre con la varianza:</p>
 <pre class="r"><code>base_con_promedios %&gt;% 
-    summarise(var(suma_segundo_bloque))</code></pre>
+    summarise(varianza = var(suma_segundo_bloque))</code></pre>
 <pre><code>## # A tibble: 1 × 1
-##   `var(suma_segundo_bloque)`
-##                        &lt;dbl&gt;
-## 1                    0.00375</code></pre>
+##   varianza
+##      &lt;dbl&gt;
+## 1  0.00375</code></pre>
 <p>La varianza es de casi 0, por lo que la distancia respecto de la
 media es insignificante.</p>
 <p>También gráficamente:</p>
@@ -480,41 +480,65 @@ forma mucho más homogénea alrededor del valor de un día de 24hs.</p>
 <h3>Hipótesis 1: Producto de las asimetrías de género, las mujeres
 dedican más tiempo al trabajo no remunerado y a las tareas de cuidado
 que los hombres.</h3>
+<pre class="r"><code>#Tiempo dedicado por hombres y mujeres al trabajo no remunerado y tareas de cuidado.
+base_cruda %&gt;% 
+  group_by(sexo) %&gt;%  
+  filter(dia_laborable == &quot;Día laborable&quot;) %&gt;% 
+  mutate(cuidados_trabajos_no_remunerados = tareas_cuidados + trabajo_domestico_no_pago) %&gt;% 
+  summarise(&quot;tiempo_de_cuidado+trabajo_no_remunerado&quot; = mean(cuidados_trabajos_no_remunerados))</code></pre>
+<pre><code>## # A tibble: 2 × 2
+##   sexo  `tiempo_de_cuidado+trabajo_no_remunerado`
+##   &lt;chr&gt;                                     &lt;dbl&gt;
+## 1 Mujer                                      3.47
+## 2 Varon                                      1.90</code></pre>
+<p>En efecto, las mujeres dedican en promedio 2.5 hs más que los hombres
+al trabajo no remunerado y a las tareas de cuidado. Esto verificaría la
+existencia de asimetrías de género.</p>
 </div>
 <div id="hipótesis-2-las-personas-menores-de-18-años-dedican-más-tiempo-a-las-actividades-recreativas-que-el-resto-de-las-personas-mayores-de-18-años-empleadas-en-un-día-laborable." class="section level3">
 <h3>Hipótesis 2: Las personas menores de 18 años dedican más tiempo a
 las actividades recreativas que el resto de las personas mayores de 18
 años empleadas en un día laborable.</h3>
-<pre class="r"><code>base_cruda %&gt;% 
+<pre class="r"><code>#Tiempo dedicado a actividades recreativas de menores de 18 años
+base_cruda %&gt;% 
   filter(edad &lt; &quot;19&quot;) %&gt;% 
-  summarise(mean(recreacion))</code></pre>
+  summarise(tiempo_de_recreación_sub_18 = mean(recreacion))</code></pre>
 <pre><code>## # A tibble: 1 × 1
-##   `mean(recreacion)`
-##                &lt;dbl&gt;
-## 1               4.69</code></pre>
-<pre class="r"><code>base_cruda %&gt;% 
+##   tiempo_de_recreación_sub_18
+##                         &lt;dbl&gt;
+## 1                        4.69</code></pre>
+<pre class="r"><code>#Tiempo dedicado a actividades recreativas de mayores de 18 años empleadas en un día laborable
+base_cruda %&gt;% 
   filter(edad &gt; &quot;18&quot;, dia_laborable == &quot;Día laborable&quot;, estado_ocupacional == &quot;Ocupado&quot;) %&gt;%
-  summarise(mean(recreacion))</code></pre>
+  summarise(&quot;tiempo_de_recreacion_+_18&quot; = mean(recreacion))</code></pre>
 <pre><code>## # A tibble: 1 × 1
-##   `mean(recreacion)`
-##                &lt;dbl&gt;
-## 1               2.35</code></pre>
+##   `tiempo_de_recreacion_+_18`
+##                         &lt;dbl&gt;
+## 1                        2.35</code></pre>
+<p>Como era de esperar, las personas menores de 18 años dedican en los
+días laborables más tiempo (el doble aproximadamente) a las actividades
+recreativas que las personas empleadas mayores de 18 años. Esto se
+debería a que al no necesitar trabajar, las personas menores de 18 años
+cuentan con más tiempo libre disponible para dedicar a actividades
+recreativas.</p>
 </div>
 <div id="hipótesis-3-producto-de-las-asimetrías-de-género-las-mujeres-activas-dedican-menos-tiempo-al-trabajo-remunerado-que-los-hombres-activos." class="section level3">
 <h3>Hipótesis 3: Producto de las asimetrías de género, las mujeres
 activas dedican menos tiempo al trabajo remunerado que los hombres
 activos.</h3>
-<p>Primera aproximación a la Hipótesis 3:</p>
 <pre class="r"><code>#Promedio de hs. de trabajo pago en hombres
 base_cruda %&gt;% 
   group_by(sexo) %&gt;%  
   filter(dia_laborable == &quot;Día laborable&quot;) %&gt;% 
-  summarise(mean(trabajo_pago))</code></pre>
+  filter(estado_ocupacional == &quot;Ocupado&quot;) %&gt;%
+  summarise(promedio_hs_trabajo_pago = mean(trabajo_pago))</code></pre>
 <pre><code>## # A tibble: 2 × 2
-##   sexo  `mean(trabajo_pago)`
-##   &lt;chr&gt;                &lt;dbl&gt;
-## 1 Mujer                 8.13
-## 2 Varon                 9.23</code></pre>
+##   sexo  promedio_hs_trabajo_pago
+##   &lt;chr&gt;                    &lt;dbl&gt;
+## 1 Mujer                     8.15
+## 2 Varon                     9.24</code></pre>
+<p>Aquí también se verifica la hipótesis. Las mujeres le dedican poco
+más de 1 hora menos por día al trabajo pago que los hombres.</p>
 </div>
 </div>
 
