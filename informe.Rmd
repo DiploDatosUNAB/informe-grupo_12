@@ -24,8 +24,7 @@ Los datos que se toman para este trabajo práctico Nº 1 corresponden a una encu
 ```{r}
 # Código para cargar o leer los datos
 base_cruda <- read_csv("datos/encuesta_uso_tiempo_2016.csv", 
-    locale = locale(encoding = "ASCII", asciify = TRUE))
-# El campo dia_laborable contenía valores con acentos y no encontré la forma de trabajarlos, así que probando encontré una forma de colapsarlos a un caracter que pudiese trabajar
+    locale = locale(encoding = "windows-1252"))
 ```
 La base de datos contiene 27 variables y 2336 observaciones. Contiene variables sociodemográficas a saber: sexo, edad, rango etario, nivel educativo, parentesco con el jefe del hogar, tipo de hogar, quintil_ingreso y estado ocupacional. También se relevaron otras variables contextuales, a saber: dia laborable (para determinar si el uso del tiempo del día relevado fue laborable o no), Día típico. Finalmente, las variables sobre uso del tiempo que son ocho: trabajo_pago, trabajo_domestico_no_pago, voluntariados, estudio_educacion, recreacion, aplicaciones, tareas_cuidados y cuidado_personal.  Se observa que estas últimas se encuentran duplicadas. 
 
@@ -46,18 +45,16 @@ Veamos ahora por qué las variables sobre el uso del tiempo se encuentran duplic
 Primero, sumaremos las ocho primeras variables sobre uso del tiempo para luego determinar su promedio:
 
 ```{r}
-base_cruda %>% 
-  mutate(suma_primer_bloque = trabajo_pago + trabajo_domestico_no_pago + voluntariados + estudio_educacion + recreacion + aplicaciones + tareas_cuidados + cuidado_personal) %>% 
-  summarise(mean(suma_primer_bloque))
+base_con_promedios %>% 
+    summarise(mean(suma_primer_bloque))
 
 ```
 La suma del primer bloque da significativamente mas de 24 hs. Esto se deba probablemente a que es posible hacer más de una actividad simultáneamente (como mirar televisión mientras se plancha la ropa).
 
 Ahora calcularemos su varianza:
 ```{r}
-base_cruda %>% 
-  mutate(suma_primer_bloque = trabajo_pago + trabajo_domestico_no_pago + voluntariados + estudio_educacion + recreacion + aplicaciones + tareas_cuidados + cuidado_personal) %>% 
-  summarise(var(suma_primer_bloque))
+base_con_promedios %>% 
+    summarise(var(suma_primer_bloque))
 ```
 
 La varianza es de más de 10, por lo que la distancia respecto de la media es alta.
@@ -67,7 +64,7 @@ Veamoslo con un gráfico:
 
 ```{r}
 ggplot(base_con_promedios, aes(suma_primer_bloque)) +
-  geom_histogram(bins = 10, aes(colour=as.factor(sexo)))
+  geom_histogram(bins = 10, aes(fill=as.factor(sexo)))
 
 ```
 
@@ -76,18 +73,16 @@ En este histograma se ve mejor cómo los valores se distribuyen de forma heterog
 En segundo lugar haremos el mismo análisis para el segundo conjunto de variables duplicado
 
 ```{r}
-base_cruda %>% 
-  mutate(suma_segundo_bloque = trabajo_pago2 + trabajo_domestico_no_pago2 + voluntariados2 + estudio_educacion2 + recreacion2 + aplicaciones2 + tareas_cuidados2 + cuidado_personal2) %>% 
-  summarise(mean(suma_segundo_bloque))
+base_con_promedios %>% 
+    summarise(mean(suma_segundo_bloque))
 ```
 El promedio de la suma del segundo bloque da 24 hs, es posible que se hayan ponderado los valores de este conjunto de variables para que se distribuyan en un día de 24 hs.
 
 Veamos qué ocurre con la varianza:
 
 ```{r}
-base_cruda %>% 
-  mutate(suma_segundo_bloque = trabajo_pago2 + trabajo_domestico_no_pago2 + voluntariados2 + estudio_educacion2 + recreacion2 + aplicaciones2 + tareas_cuidados2 + cuidado_personal2) %>% 
-  summarise(var(suma_segundo_bloque))
+base_con_promedios %>% 
+    summarise(var(suma_segundo_bloque))
 ```
 La varianza es de casi 0, por lo que la distancia respecto de la media es insignificante.
 
@@ -95,7 +90,7 @@ También gráficamente:
 
 ```{r}
 ggplot(base_con_promedios, aes(suma_segundo_bloque)) +
-  geom_histogram(bins = 10, aes(colour=as.factor(sexo)))
+  geom_histogram(bins = 10, aes(fill=as.factor(sexo)))
 
 ```
 
@@ -107,22 +102,26 @@ En este histograma se ve mejor cómo los valores se distribuyen de forma mucho m
 
 ### Hipótesis 2: Las personas menores de 18 años dedican más tiempo a las actividades recreativas que el resto de las personas mayores de 18 años empleadas en un día laborable.
 
+```{r}
+base_cruda %>% 
+  filter(edad < "19") %>% 
+  summarise(mean(recreacion))
+```
+```{r}
+base_cruda %>% 
+  filter(edad > "18", dia_laborable == "Día laborable", estado_ocupacional == "Ocupado") %>%
+  summarise(mean(recreacion))
+```
+
+
+
 ### Hipótesis 3: Producto de las asimetrías de género, las mujeres activas dedican menos tiempo al trabajo remunerado que los hombres activos.
 
 Primera aproximación a la Hipótesis 3:
 ```{r}
 #Promedio de hs. de trabajo pago en hombres
 base_cruda %>% 
-  filter(sexo == "Varon") %>% 
-  filter(dia_laborable == "Dma laborable") %>% 
-  summarise(mean(trabajo_pago))
-```
-
-
-```{r}
-#Promedio de hs. de trabajo pago en mujeres
-base_cruda %>% 
-  filter(sexo == "Mujer") %>% 
-  filter(dia_laborable == "Dma laborable") %>% 
+  group_by(sexo) %>%  
+  filter(dia_laborable == "Día laborable") %>% 
   summarise(mean(trabajo_pago))
 ```
