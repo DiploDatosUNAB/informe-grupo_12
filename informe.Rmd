@@ -24,8 +24,7 @@ Los datos que se toman para este trabajo práctico Nº 1 corresponden a una encu
 ```{r}
 # Código para cargar o leer los datos
 base_cruda <- read_csv("datos/encuesta_uso_tiempo_2016.csv", 
-    locale = locale(encoding = "ASCII", asciify = TRUE))
-# El campo dia_laborable contenía valores con acentos y no encontré la forma de trabajarlos, así que probando encontré una forma de colapsarlos a un caracter que pudiese trabajar
+    locale = locale(encoding = "windows-1252"))
 ```
 La base de datos contiene 27 variables y 2336 observaciones. Contiene variables sociodemográficas a saber: sexo, edad, rango etario, nivel educativo, parentesco con el jefe del hogar, tipo de hogar, quintil_ingreso y estado ocupacional. También se relevaron otras variables contextuales, a saber: dia laborable (para determinar si el uso del tiempo del día relevado fue laborable o no), Día típico. Finalmente, las variables sobre uso del tiempo que son ocho: trabajo_pago, trabajo_domestico_no_pago, voluntariados, estudio_educacion, recreacion, aplicaciones, tareas_cuidados y cuidado_personal.  Se observa que estas últimas se encuentran duplicadas. 
 
@@ -46,18 +45,16 @@ Veamos ahora por qué las variables sobre el uso del tiempo se encuentran duplic
 Primero, sumaremos las ocho primeras variables sobre uso del tiempo para luego determinar su promedio:
 
 ```{r}
-base_cruda %>% 
-  mutate(suma_primer_bloque = trabajo_pago + trabajo_domestico_no_pago + voluntariados + estudio_educacion + recreacion + aplicaciones + tareas_cuidados + cuidado_personal) %>% 
-  summarise(mean(suma_primer_bloque))
+base_con_promedios %>% 
+    summarise(promedio = mean(suma_primer_bloque))
 
 ```
 La suma del primer bloque da significativamente mas de 24 hs. Esto se deba probablemente a que es posible hacer más de una actividad simultáneamente (como mirar televisión mientras se plancha la ropa).
 
 Ahora calcularemos su varianza:
 ```{r}
-base_cruda %>% 
-  mutate(suma_primer_bloque = trabajo_pago + trabajo_domestico_no_pago + voluntariados + estudio_educacion + recreacion + aplicaciones + tareas_cuidados + cuidado_personal) %>% 
-  summarise(var(suma_primer_bloque))
+base_con_promedios %>% 
+    summarise(varianza = var(suma_primer_bloque))
 ```
 
 La varianza es de más de 10, por lo que la distancia respecto de la media es alta.
@@ -67,7 +64,7 @@ Veamoslo con un gráfico:
 
 ```{r}
 ggplot(base_con_promedios, aes(suma_primer_bloque)) +
-  geom_histogram(bins = 10, aes(colour=as.factor(sexo)))
+  geom_histogram(bins = 10, aes(fill=as.factor(sexo)))
 
 ```
 
@@ -76,18 +73,16 @@ En este histograma se ve mejor cómo los valores se distribuyen de forma heterog
 En segundo lugar haremos el mismo análisis para el segundo conjunto de variables duplicado
 
 ```{r}
-base_cruda %>% 
-  mutate(suma_segundo_bloque = trabajo_pago2 + trabajo_domestico_no_pago2 + voluntariados2 + estudio_educacion2 + recreacion2 + aplicaciones2 + tareas_cuidados2 + cuidado_personal2) %>% 
-  summarise(mean(suma_segundo_bloque))
+base_con_promedios %>% 
+    summarise(promedio = mean(suma_segundo_bloque))
 ```
 El promedio de la suma del segundo bloque da 24 hs, es posible que se hayan ponderado los valores de este conjunto de variables para que se distribuyan en un día de 24 hs.
 
 Veamos qué ocurre con la varianza:
 
 ```{r}
-base_cruda %>% 
-  mutate(suma_segundo_bloque = trabajo_pago2 + trabajo_domestico_no_pago2 + voluntariados2 + estudio_educacion2 + recreacion2 + aplicaciones2 + tareas_cuidados2 + cuidado_personal2) %>% 
-  summarise(var(suma_segundo_bloque))
+base_con_promedios %>% 
+    summarise(varianza = var(suma_segundo_bloque))
 ```
 La varianza es de casi 0, por lo que la distancia respecto de la media es insignificante.
 
@@ -95,7 +90,7 @@ También gráficamente:
 
 ```{r}
 ggplot(base_con_promedios, aes(suma_segundo_bloque)) +
-  geom_histogram(bins = 10, aes(colour=as.factor(sexo)))
+  geom_histogram(bins = 10, aes(fill=as.factor(sexo)))
 
 ```
 
@@ -103,26 +98,65 @@ En este histograma se ve mejor cómo los valores se distribuyen de forma mucho m
 
 ## Hipótesis
 
-### Hipótesis 1: Producto de las asimetrías de género, las mujeres dedican más tiempo al trabajo no remunerado y a las tareas de cuidado que los hombres.
-
-### Hipótesis 2: Las personas menores de 18 años dedican más tiempo a las actividades recreativas que el resto de las personas mayores de 18 años empleadas en un día laborable.
-
-### Hipótesis 3: Producto de las asimetrías de género, las mujeres activas dedican menos tiempo al trabajo remunerado que los hombres activos.
-
-Primera aproximación a la Hipótesis 3:
-```{r}
-#Promedio de hs. de trabajo pago en hombres
-base_cruda %>% 
-  filter(sexo == "Varon") %>% 
-  filter(dia_laborable == "Dma laborable") %>% 
-  summarise(mean(trabajo_pago))
-```
-
+### Hipótesis 1: Producto de las asimetrías de género, las mujeres dedican más tiempo al trabajo no remunerado y a las tareas de cuidado que los hombres, independientemente de su estado ocupacional.
 
 ```{r}
-#Promedio de hs. de trabajo pago en mujeres
-base_cruda %>% 
-  filter(sexo == "Mujer") %>% 
-  filter(dia_laborable == "Dma laborable") %>% 
-  summarise(mean(trabajo_pago))
+#Tiempo dedicado por hombres y mujeres al trabajo no remunerado y tareas de cuidado.
+Cuidados_ocupados <- base_cruda %>% 
+  group_by(sexo) %>%  
+  mutate(cuidados_trabajos_no_remunerados = tareas_cuidados + trabajo_domestico_no_pago) %>% 
+  filter(estado_ocupacional == "Ocupado") %>% 
+  summarise("Cuidados+No_remunerado_Ocupados" = mean(cuidados_trabajos_no_remunerados))
+Cuidados_desocupados <- base_cruda %>% 
+  group_by(sexo) %>%  
+  mutate(cuidados_trabajos_no_remunerados = tareas_cuidados + trabajo_domestico_no_pago) %>% 
+  filter(estado_ocupacional == "Desocupado") %>% 
+  summarise("Cuidados+No_remunerado_Desocupados" = mean(cuidados_trabajos_no_remunerados))
+Cuidados_inactivos <- base_cruda %>% 
+  group_by(sexo) %>%  
+  mutate(cuidados_trabajos_no_remunerados = tareas_cuidados + trabajo_domestico_no_pago) %>% 
+  filter(estado_ocupacional == "Inactivo") %>% 
+  summarise("Cuidados+No_remunerado_Inactivos" = mean(cuidados_trabajos_no_remunerados))
+join_1 <- full_join(by = "sexo",Cuidados_desocupados, Cuidados_inactivos)
+full_join(by = "sexo", join_1, Cuidados_ocupados)
 ```
+En efecto, las mujeres dedican en promedio entre un 80% y un 100% más tiempo que los hombres al trabajo no remunerado y a las tareas de cuidado. Esto verificaría la existencia de asimetrías de género.
+
+
+### Hipótesis 2: Las personas menores de 18 años dedican más tiempo a las actividades recreativas que el resto de las personas mayores de 18 años en un día laborable.
+
+```{r}
+#Comparación de tiempo dedicado a actividades recreativas entre menores y mayores de 18 años
+tiempo_sub_18 <- base_cruda %>% 
+  filter(edad < 19, dia_laborable == "Día laborable") %>% 
+  summarise(tiempo_de_recreación_sub_18 = mean(recreacion))
+tiempo_mayores_18 <-  base_cruda %>% 
+  filter(edad > 18, dia_laborable == "Día laborable") %>%
+  summarise("tiempo_de_recreacion_+_18" = mean(recreacion))
+bind_cols(tiempo_sub_18, tiempo_mayores_18)
+```
+Como era de esperar, las personas menores de 18 años dedican en los días laborables alrededor de un 50% más de tiempo a las actividades recreativas que las personas mayores de 18 años. Esto se debería a que al tener menor necesidad de trabajar, las personas menores de 18 años cuentan con más tiempo libre disponible para dedicar a actividades recreativas.
+
+
+
+### Hipótesis 3: Producto de las asimetrías de género, las mujeres dedican menos tiempo al trabajo remunerado que los hombres.
+
+```{r}
+#Promedio de hs. de trabajo según sexo para días laborables y no laborables
+Trabajo_ocupados <- base_cruda %>% 
+  group_by(sexo) %>%  
+  filter(estado_ocupacional == "Ocupado") %>% 
+  summarise(Hs_Ocupados = mean(trabajo_pago))
+Trabajo_desocupados <- base_cruda %>% 
+  group_by(sexo) %>%  
+  filter(estado_ocupacional == "Desocupado") %>% 
+  summarise(Hs_Desocupados = mean(trabajo_pago))
+Trabajo_inactivos <- base_cruda %>% 
+  group_by(sexo) %>%  
+  filter(estado_ocupacional == "Inactivo") %>% 
+  summarise(Hs_Inactivos = mean(trabajo_pago))
+join_1 <- full_join(by = "sexo",Trabajo_desocupados, Trabajo_inactivos)
+full_join(by = "sexo", join_1, Trabajo_ocupados)
+
+```
+Aquí también se verifica la hipótesis. En el caso de las mujeres desocupadas e inactivas y los hombres inactivos prácticamente no dedican tiempo al trabajo remunerado, mientras que los hombres desocupados dedican más de 1 hora diaria. Aquí el valor significativo es que los hombres, aún estando desocupados, pueden dedicar un tiempo significativo al trabajo remunerado, no así las mujeres. Esta situación no sucede con las personas inactivas, donde en ambos sexos el tiempo dedicado a esta tarea es prácticamente nulo. Sin embargo, en el caso de las personas ocupadas, las mujeres  le dedican alrededor de un 20% menos de tiempo por día al trabajo pago que los hombres. Teniendo en cuenta que, según se desprende de los datos de la hipótesis 1, las mujeres ocupadas dedican 2 horas más por día que los hombres a las tareas de cuidado y trabajo no remunerado, puede concluirse que, en promedio, resignan más de 1 hora de trabajo pago para realizar tareas de cuidado y trabajo no remunerado.
