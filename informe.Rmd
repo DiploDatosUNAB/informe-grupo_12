@@ -98,46 +98,42 @@ En este histograma se ve mejor cómo los valores se distribuyen de forma mucho m
 
 ## Hipótesis
 
-### Hipótesis 1: Producto de las asimetrías de género, las mujeres dedican más tiempo al trabajo no remunerado y a las tareas de cuidado que los hombres.
+### Hipótesis 1: Producto de las asimetrías de género, las mujeres ocupadas dedican más tiempo al trabajo no remunerado y a las tareas de cuidado que los hombres ocupados.
 
 ```{r}
 #Tiempo dedicado por hombres y mujeres al trabajo no remunerado y tareas de cuidado.
 base_cruda %>% 
   group_by(sexo) %>%  
-  filter(dia_laborable == "Día laborable") %>% 
   mutate(cuidados_trabajos_no_remunerados = tareas_cuidados + trabajo_domestico_no_pago) %>% 
+  filter(estado_ocupacional == "Ocupado") %>% 
   summarise("tiempo_de_cuidado+trabajo_no_remunerado" = mean(cuidados_trabajos_no_remunerados))
 ```
-En efecto, las mujeres dedican en promedio 2.5 hs más que los hombres al trabajo no remunerado y a las tareas de cuidado. Esto verificaría la existencia de asimetrías de género.
+En efecto, las mujeres dedican en promedio más de 2 hs que los hombres al trabajo no remunerado y a las tareas de cuidado. Esto verificaría la existencia de asimetrías de género.
 
 
-### Hipótesis 2: Las personas menores de 18 años dedican más tiempo a las actividades recreativas que el resto de las personas mayores de 18 años empleadas en un día laborable.
+### Hipótesis 2: Las personas menores de 18 años dedican más tiempo a las actividades recreativas que el resto de las personas mayores de 18 años en un día laborable.
 
 ```{r}
-#Tiempo dedicado a actividades recreativas de menores de 18 años
-base_cruda %>% 
-  filter(edad < "19") %>% 
+#Comparación de tiempo dedicado a actividades recreativas entre menores y mayores de 18 años
+tiempo_sub_18 <- base_cruda %>% 
+  filter(edad < 19, dia_laborable == "Día laborable") %>% 
   summarise(tiempo_de_recreación_sub_18 = mean(recreacion))
-```
-
-```{r}
-#Tiempo dedicado a actividades recreativas de mayores de 18 años empleadas en un día laborable
-base_cruda %>% 
-  filter(edad > "18", dia_laborable == "Día laborable", estado_ocupacional == "Ocupado") %>%
+tiempo_mayores_18 <-  base_cruda %>% 
+  filter(edad > 18, dia_laborable == "Día laborable") %>%
   summarise("tiempo_de_recreacion_+_18" = mean(recreacion))
+bind_cols(tiempo_sub_18, tiempo_mayores_18)
 ```
-Como era de esperar, las personas menores de 18 años dedican en los días laborables más tiempo (el doble aproximadamente) a las actividades recreativas que las personas empleadas mayores de 18 años. Esto se debería a que al no necesitar trabajar, las personas menores de 18 años cuentan con más tiempo libre disponible para dedicar a actividades recreativas.
+Como era de esperar, las personas menores de 18 años dedican en los días laborables más tiempo a las actividades recreativas que las personas mayores de 18 años. Esto se debería a que al tener menor necesidad de trabajar, las personas menores de 18 años cuentan con más tiempo libre disponible para dedicar a actividades recreativas.
 
 
 
-### Hipótesis 3: Producto de las asimetrías de género, las mujeres activas dedican menos tiempo al trabajo remunerado que los hombres activos.
+### Hipótesis 3: Producto de las asimetrías de género, las mujeres ocupadas dedican menos tiempo al trabajo remunerado que los hombres ocupados.
 
 ```{r}
 #Promedio de hs. de trabajo pago en hombres
 base_cruda %>% 
-  group_by(sexo) %>%  
-  filter(dia_laborable == "Día laborable") %>% 
-  filter(estado_ocupacional == "Ocupado") %>%
+  group_by(sexo) %>% 
+  filter(estado_ocupacional == "Ocupado") %>% 
   summarise(promedio_hs_trabajo_pago = mean(trabajo_pago))
 ```
-Aquí también se verifica la hipótesis. Las mujeres le dedican poco más de 1 hora menos por día al trabajo pago que los hombres.
+Aquí también se verifica la hipótesis. Las mujeres le dedican más de 1 hora menos por día al trabajo pago que los hombres. Teniendo en cuenta que, según se desprende de los datos de la hipótesis 1, las mujeres ocupadas dedican 2 horas más por día que los hombres a las tareas de cuidado y trabajo no remunerado, puede concluirse que, en promedio, resignan más de 1 hora de trabajo pago en promedio para realizar tareas de cuidado y trabajo no remunerado.

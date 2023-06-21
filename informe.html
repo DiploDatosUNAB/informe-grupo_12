@@ -483,44 +483,38 @@ que los hombres.</h3>
 <pre class="r"><code>#Tiempo dedicado por hombres y mujeres al trabajo no remunerado y tareas de cuidado.
 base_cruda %&gt;% 
   group_by(sexo) %&gt;%  
-  filter(dia_laborable == &quot;Día laborable&quot;) %&gt;% 
   mutate(cuidados_trabajos_no_remunerados = tareas_cuidados + trabajo_domestico_no_pago) %&gt;% 
   summarise(&quot;tiempo_de_cuidado+trabajo_no_remunerado&quot; = mean(cuidados_trabajos_no_remunerados))</code></pre>
 <pre><code>## # A tibble: 2 × 2
 ##   sexo  `tiempo_de_cuidado+trabajo_no_remunerado`
 ##   &lt;chr&gt;                                     &lt;dbl&gt;
-## 1 Mujer                                      3.47
-## 2 Varon                                      1.90</code></pre>
-<p>En efecto, las mujeres dedican en promedio 2.5 hs más que los hombres
-al trabajo no remunerado y a las tareas de cuidado. Esto verificaría la
-existencia de asimetrías de género.</p>
+## 1 Mujer                                      4.66
+## 2 Varon                                      2.51</code></pre>
+<p>En efecto, las mujeres dedican en promedio más de 2 hs que los
+hombres al trabajo no remunerado y a las tareas de cuidado. Esto
+verificaría la existencia de asimetrías de género.</p>
 </div>
-<div id="hipótesis-2-las-personas-menores-de-18-años-dedican-más-tiempo-a-las-actividades-recreativas-que-el-resto-de-las-personas-mayores-de-18-años-empleadas-en-un-día-laborable." class="section level3">
+<div id="hipótesis-2-las-personas-menores-de-18-años-dedican-más-tiempo-a-las-actividades-recreativas-que-el-resto-de-las-personas-mayores-de-18-años-en-un-día-laborable." class="section level3">
 <h3>Hipótesis 2: Las personas menores de 18 años dedican más tiempo a
 las actividades recreativas que el resto de las personas mayores de 18
-años empleadas en un día laborable.</h3>
-<pre class="r"><code>#Tiempo dedicado a actividades recreativas de menores de 18 años
-base_cruda %&gt;% 
-  filter(edad &lt; &quot;19&quot;) %&gt;% 
-  summarise(tiempo_de_recreación_sub_18 = mean(recreacion))</code></pre>
-<pre><code>## # A tibble: 1 × 1
-##   tiempo_de_recreación_sub_18
-##                         &lt;dbl&gt;
-## 1                        4.69</code></pre>
-<pre class="r"><code>#Tiempo dedicado a actividades recreativas de mayores de 18 años empleadas en un día laborable
-base_cruda %&gt;% 
-  filter(edad &gt; &quot;18&quot;, dia_laborable == &quot;Día laborable&quot;, estado_ocupacional == &quot;Ocupado&quot;) %&gt;%
-  summarise(&quot;tiempo_de_recreacion_+_18&quot; = mean(recreacion))</code></pre>
-<pre><code>## # A tibble: 1 × 1
-##   `tiempo_de_recreacion_+_18`
-##                         &lt;dbl&gt;
-## 1                        2.35</code></pre>
+años en un día laborable.</h3>
+<pre class="r"><code>#Comparación de tiempo dedicado a actividades recreativas entre menores y mayores de 18 años
+tiempo_sub_18 &lt;- base_cruda %&gt;% 
+  filter(edad &lt; 19, dia_laborable == &quot;Día laborable&quot;) %&gt;% 
+  summarise(tiempo_de_recreación_sub_18 = mean(recreacion))
+tiempo_mayores_18 &lt;-  base_cruda %&gt;% 
+  filter(edad &gt; 18, dia_laborable == &quot;Día laborable&quot;) %&gt;%
+  summarise(&quot;tiempo_de_recreacion_+_18&quot; = mean(recreacion))
+bind_cols(tiempo_sub_18, tiempo_mayores_18)</code></pre>
+<pre><code>## # A tibble: 1 × 2
+##   tiempo_de_recreación_sub_18 `tiempo_de_recreacion_+_18`
+##                         &lt;dbl&gt;                       &lt;dbl&gt;
+## 1                        3.67                        2.35</code></pre>
 <p>Como era de esperar, las personas menores de 18 años dedican en los
-días laborables más tiempo (el doble aproximadamente) a las actividades
-recreativas que las personas empleadas mayores de 18 años. Esto se
-debería a que al no necesitar trabajar, las personas menores de 18 años
-cuentan con más tiempo libre disponible para dedicar a actividades
-recreativas.</p>
+días laborables más tiempo a las actividades recreativas que las
+personas mayores de 18 años. Esto se debería a que al tener menor
+necesidad de trabajar, las personas menores de 18 años cuentan con más
+tiempo libre disponible para dedicar a actividades recreativas.</p>
 </div>
 <div id="hipótesis-3-producto-de-las-asimetrías-de-género-las-mujeres-activas-dedican-menos-tiempo-al-trabajo-remunerado-que-los-hombres-activos." class="section level3">
 <h3>Hipótesis 3: Producto de las asimetrías de género, las mujeres
