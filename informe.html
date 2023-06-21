@@ -476,23 +476,38 @@ forma mucho más homogénea alrededor del valor de un día de 24hs.</p>
 </div>
 <div id="hipótesis" class="section level2">
 <h2>Hipótesis</h2>
-<div id="hipótesis-1-producto-de-las-asimetrías-de-género-las-mujeres-dedican-más-tiempo-al-trabajo-no-remunerado-y-a-las-tareas-de-cuidado-que-los-hombres." class="section level3">
+<div id="hipótesis-1-producto-de-las-asimetrías-de-género-las-mujeres-dedican-más-tiempo-al-trabajo-no-remunerado-y-a-las-tareas-de-cuidado-que-los-hombres-independientemente-de-su-estado-ocupacional." class="section level3">
 <h3>Hipótesis 1: Producto de las asimetrías de género, las mujeres
 dedican más tiempo al trabajo no remunerado y a las tareas de cuidado
-que los hombres.</h3>
+que los hombres, independientemente de su estado ocupacional.</h3>
 <pre class="r"><code>#Tiempo dedicado por hombres y mujeres al trabajo no remunerado y tareas de cuidado.
-base_cruda %&gt;% 
+Cuidados_ocupados &lt;- base_cruda %&gt;% 
   group_by(sexo) %&gt;%  
   mutate(cuidados_trabajos_no_remunerados = tareas_cuidados + trabajo_domestico_no_pago) %&gt;% 
-  summarise(&quot;tiempo_de_cuidado+trabajo_no_remunerado&quot; = mean(cuidados_trabajos_no_remunerados))</code></pre>
-<pre><code>## # A tibble: 2 × 2
-##   sexo  `tiempo_de_cuidado+trabajo_no_remunerado`
-##   &lt;chr&gt;                                     &lt;dbl&gt;
-## 1 Mujer                                      4.66
-## 2 Varon                                      2.51</code></pre>
-<p>En efecto, las mujeres dedican en promedio más de 2 hs que los
-hombres al trabajo no remunerado y a las tareas de cuidado. Esto
-verificaría la existencia de asimetrías de género.</p>
+  filter(estado_ocupacional == &quot;Ocupado&quot;) %&gt;% 
+  summarise(&quot;Cuidados+No_remunerado_Ocupados&quot; = mean(cuidados_trabajos_no_remunerados))
+Cuidados_desocupados &lt;- base_cruda %&gt;% 
+  group_by(sexo) %&gt;%  
+  mutate(cuidados_trabajos_no_remunerados = tareas_cuidados + trabajo_domestico_no_pago) %&gt;% 
+  filter(estado_ocupacional == &quot;Desocupado&quot;) %&gt;% 
+  summarise(&quot;Cuidados+No_remunerado_Desocupados&quot; = mean(cuidados_trabajos_no_remunerados))
+Cuidados_inactivos &lt;- base_cruda %&gt;% 
+  group_by(sexo) %&gt;%  
+  mutate(cuidados_trabajos_no_remunerados = tareas_cuidados + trabajo_domestico_no_pago) %&gt;% 
+  filter(estado_ocupacional == &quot;Inactivo&quot;) %&gt;% 
+  summarise(&quot;Cuidados+No_remunerado_Inactivos&quot; = mean(cuidados_trabajos_no_remunerados))
+join_1 &lt;- full_join(by = &quot;sexo&quot;,Cuidados_desocupados, Cuidados_inactivos)
+full_join(by = &quot;sexo&quot;, join_1, Cuidados_ocupados)</code></pre>
+<pre><code>## # A tibble: 2 × 4
+##   sexo  Cuidados+No_remunerado_D…¹ Cuidados+No_remunera…² Cuidados+No_remunera…³
+##   &lt;chr&gt;                      &lt;dbl&gt;                  &lt;dbl&gt;                  &lt;dbl&gt;
+## 1 Mujer                       6.59                   4.81                   4.44
+## 2 Varon                       3.31                   2.58                   2.46
+## # ℹ abbreviated names: ¹​`Cuidados+No_remunerado_Desocupados`,
+## #   ²​`Cuidados+No_remunerado_Inactivos`, ³​`Cuidados+No_remunerado_Ocupados`</code></pre>
+<p>En efecto, las mujeres dedican en promedio entre un 80% y un 100% más
+tiempo que los hombres al trabajo no remunerado y a las tareas de
+cuidado. Esto verificaría la existencia de asimetrías de género.</p>
 </div>
 <div id="hipótesis-2-las-personas-menores-de-18-años-dedican-más-tiempo-a-las-actividades-recreativas-que-el-resto-de-las-personas-mayores-de-18-años-en-un-día-laborable." class="section level3">
 <h3>Hipótesis 2: Las personas menores de 18 años dedican más tiempo a
@@ -511,28 +526,50 @@ bind_cols(tiempo_sub_18, tiempo_mayores_18)</code></pre>
 ##                         &lt;dbl&gt;                       &lt;dbl&gt;
 ## 1                        3.67                        2.35</code></pre>
 <p>Como era de esperar, las personas menores de 18 años dedican en los
-días laborables más tiempo a las actividades recreativas que las
-personas mayores de 18 años. Esto se debería a que al tener menor
-necesidad de trabajar, las personas menores de 18 años cuentan con más
-tiempo libre disponible para dedicar a actividades recreativas.</p>
+días laborables alrededor de un 50% más de tiempo a las actividades
+recreativas que las personas mayores de 18 años. Esto se debería a que
+al tener menor necesidad de trabajar, las personas menores de 18 años
+cuentan con más tiempo libre disponible para dedicar a actividades
+recreativas.</p>
 </div>
-<div id="hipótesis-3-producto-de-las-asimetrías-de-género-las-mujeres-activas-dedican-menos-tiempo-al-trabajo-remunerado-que-los-hombres-activos." class="section level3">
+<div id="hipótesis-3-producto-de-las-asimetrías-de-género-las-mujeres-dedican-menos-tiempo-al-trabajo-remunerado-que-los-hombres." class="section level3">
 <h3>Hipótesis 3: Producto de las asimetrías de género, las mujeres
-activas dedican menos tiempo al trabajo remunerado que los hombres
-activos.</h3>
-<pre class="r"><code>#Promedio de hs. de trabajo pago en hombres
-base_cruda %&gt;% 
+dedican menos tiempo al trabajo remunerado que los hombres.</h3>
+<pre class="r"><code>#Promedio de hs. de trabajo según sexo para días laborables y no laborables
+Trabajo_ocupados &lt;- base_cruda %&gt;% 
   group_by(sexo) %&gt;%  
-  filter(dia_laborable == &quot;Día laborable&quot;) %&gt;% 
-  filter(estado_ocupacional == &quot;Ocupado&quot;) %&gt;%
-  summarise(promedio_hs_trabajo_pago = mean(trabajo_pago))</code></pre>
-<pre><code>## # A tibble: 2 × 2
-##   sexo  promedio_hs_trabajo_pago
-##   &lt;chr&gt;                    &lt;dbl&gt;
-## 1 Mujer                     8.15
-## 2 Varon                     9.24</code></pre>
-<p>Aquí también se verifica la hipótesis. Las mujeres le dedican poco
-más de 1 hora menos por día al trabajo pago que los hombres.</p>
+  filter(estado_ocupacional == &quot;Ocupado&quot;) %&gt;% 
+  summarise(Hs_Ocupados = mean(trabajo_pago))
+Trabajo_desocupados &lt;- base_cruda %&gt;% 
+  group_by(sexo) %&gt;%  
+  filter(estado_ocupacional == &quot;Desocupado&quot;) %&gt;% 
+  summarise(Hs_Desocupados = mean(trabajo_pago))
+Trabajo_inactivos &lt;- base_cruda %&gt;% 
+  group_by(sexo) %&gt;%  
+  filter(estado_ocupacional == &quot;Inactivo&quot;) %&gt;% 
+  summarise(Hs_Inactivos = mean(trabajo_pago))
+join_1 &lt;- full_join(by = &quot;sexo&quot;,Trabajo_desocupados, Trabajo_inactivos)
+full_join(by = &quot;sexo&quot;, join_1, Trabajo_ocupados)</code></pre>
+<pre><code>## # A tibble: 2 × 4
+##   sexo  Hs_Desocupados Hs_Inactivos Hs_Ocupados
+##   &lt;chr&gt;          &lt;dbl&gt;        &lt;dbl&gt;       &lt;dbl&gt;
+## 1 Mujer          0.139       0.1           5.52
+## 2 Varon          1.25        0.0635        6.74</code></pre>
+<p>Aquí también se verifica la hipótesis. En el caso de las mujeres
+desocupadas e inactivas y los hombres inactivos prácticamente no dedican
+tiempo al trabajo remunerado, mientras que los hombres desocupados
+dedican más de 1 hora diaria. Aquí el valor significativo es que los
+hombres, aún estando desocupados, pueden dedicar un tiempo significativo
+al trabajo remunerado, no así las mujeres. Esta situación no sucede con
+las personas inactivas, donde en ambos sexos el tiempo dedicado a esta
+tarea es prácticamente nulo. Sin embargo, en el caso de las personas
+ocupadas, las mujeres le dedican alrededor de un 20% menos de tiempo por
+día al trabajo pago que los hombres. Teniendo en cuenta que, según se
+desprende de los datos de la hipótesis 1, las mujeres ocupadas dedican 2
+horas más por día que los hombres a las tareas de cuidado y trabajo no
+remunerado, puede concluirse que, en promedio, resignan más de 1 hora de
+trabajo pago para realizar tareas de cuidado y trabajo no
+remunerado.</p>
 </div>
 </div>
 
